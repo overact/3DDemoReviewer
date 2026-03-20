@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>3D Demo Viewer</title>
+
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0f1115;
+      color: #ffffff;
+    }
+
+    .page {
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      background: #161b22;
+      padding: 24px;
+      border-right: 1px solid #2d333b;
+    }
+
+    .sidebar h1 {
+      font-size: 24px;
+      margin: 0 0 16px 0;
+    }
+
+    .sidebar p {
+      font-size: 14px;
+      color: #c9d1d9;
+      margin: 0 0 16px 0;
+      line-height: 1.6;
+    }
+
+    .control-group {
+      margin-bottom: 20px;
+    }
+
+    .control-group label {
+      display: block;
+      font-size: 14px;
+      margin-bottom: 8px;
+      color: #e6edf3;
+    }
+
+    select {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid #30363d;
+      background: #0d1117;
+      color: white;
+      font-size: 15px;
+      outline: none;
+    }
+
+    .rgb-card {
+      margin-top: 20px;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 16px;
+      padding: 14px;
+    }
+
+    .rgb-card h2 {
+      font-size: 16px;
+      margin: 0 0 12px 0;
+    }
+
+    .rgb-preview {
+      width: 100%;
+      height: 420px;
+      object-fit: contain;
+      display: block;
+      background: #222;
+      border-radius: 12px;
+    }
+
+    .main {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .viewer-title {
+      font-size: 26px;
+      margin-bottom: 14px;
+    }
+
+    .viewer-wrap {
+      flex: 1;
+      min-height: 720px;
+      background: #161b22;
+      border-radius: 18px;
+      overflow: hidden;
+      border: 1px solid #2d333b;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    model-viewer {
+      width: 100%;
+      height: 100%;
+      background: #161b22;
+      --poster-color: transparent;
+    }
+
+    .status {
+      margin-top: 12px;
+      font-size: 13px;
+      color: #c9d1d9;
+    }
+
+    @media (max-width: 900px) {
+      .page {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        border-right: none;
+        border-bottom: 1px solid #2d333b;
+      }
+
+      .rgb-preview {
+        height: 320px;
+      }
+
+      .viewer-wrap {
+        min-height: 520px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <aside class="sidebar">
+      <h1>3D Structure Viewer</h1>
+	  <p>
+	  The 3D models are reconstructed from 2D image.
+	  </p>
+      <p>
+        Select a model from the list. The corresponding image and 3D structure
+        will be loaded.
+      </p>
+
+      <div class="control-group">
+        <label for="modelSelect">Choose a model</label>
+        <select id="modelSelect"></select>
+      </div>
+
+      <div class="rgb-card">
+        <h2>RGB Preview</h2>
+        <img id="rgbPreview" class="rgb-preview" src="" alt="RGB preview" />
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="viewer-title" id="viewerTitle">Model Viewer</div>
+
+      <div class="viewer-wrap">
+        <model-viewer
+          id="viewer"
+          src=""
+          alt="3D model"
+          camera-controls
+          auto-rotate
+          auto-rotate-delay="0"
+          rotation-per-second="25deg"
+          shadow-intensity="1"
+          exposure="1.1"
+          environment-image="neutral"
+          interaction-prompt="auto">
+        </model-viewer>
+      </div>
+
+      <div class="status" id="statusText">Ready.</div>
+    </main>
+  </div>
+
+  <script>
+    // Manually maintain this list when adding or removing models.
+    const models = [
+      {
+        name: "Diced Meat",
+        glb: "./assets/DicedMeat.glb",
+        rgb: "./images/DicedMeat.jpg"
+      },
+	  {
+        name: "Cattle",
+        glb: "./assets/Cattle.glb",
+        rgb: "./images/Cattle.jpg"
+      },
+      {
+        name: "More to come",
+    //    glb: "./assets/meat1.glb",
+    //    rgb: "./images/meat1.jpg"
+      }
+    ];
+
+    const modelSelect = document.getElementById("modelSelect");
+    const viewer = document.getElementById("viewer");
+    const rgbPreview = document.getElementById("rgbPreview");
+    const viewerTitle = document.getElementById("viewerTitle");
+    const statusText = document.getElementById("statusText");
+
+    function setStatus(message) {
+      statusText.textContent = message;
+    }
+
+    function loadModel(index) {
+      const item = models[index];
+      if (!item) return;
+
+      viewerTitle.textContent = item.name;
+      setStatus(`Loading ${item.name}...`);
+
+      viewer.src = item.glb;
+      rgbPreview.src = item.rgb;
+      rgbPreview.alt = `${item.name} RGB preview`;
+    }
+
+    // Populate the dropdown menu from the manual model list.
+    models.forEach((item, index) => {
+      const option = document.createElement("option");
+      option.value = index;
+      option.textContent = item.name;
+      modelSelect.appendChild(option);
+    });
+
+    // Switch model and RGB preview when the selection changes.
+    modelSelect.addEventListener("change", (event) => {
+      loadModel(Number(event.target.value));
+    });
+
+    // Show model loading status.
+    viewer.addEventListener("load", () => {
+      setStatus("Model loaded successfully.");
+    });
+
+    viewer.addEventListener("error", (event) => {
+      console.error("Model failed to load:", event);
+      setStatus("Failed to load GLB model. Check file path or format.");
+    });
+
+    // Show image loading status.
+    rgbPreview.addEventListener("error", () => {
+      setStatus("Failed to load RGB image. Check file path.");
+    });
+
+    // Load the first model by default.
+    loadModel(0);
+  </script>
+</body>
+</html>
